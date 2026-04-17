@@ -1,9 +1,15 @@
 const Groq = require("groq-sdk");
 
-// Intentionally loaded dynamically if the variable doesn't exist yet
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY || "dummy-key-to-avoid-crash-until-set",
-});
+let _groqInstance = null;
+
+function getGroqClient() {
+    if (!_groqInstance) {
+        _groqInstance = new Groq({
+            apiKey: "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",
+        });
+    }
+    return _groqInstance;
+}
 
 function buildSystemPrompt() {
     return `
@@ -59,6 +65,7 @@ ${query}
 `.trim();
 
         // 4. LLM call
+        const groq = getGroqClient();
         const response = await groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             temperature: 0.2,
@@ -107,6 +114,7 @@ async function summarizeLLM(text) {
         // Truncate to ~12000 chars to stay within Groq token limits
         const truncatedText = text.slice(0, 12000);
 
+        const groq = getGroqClient();
         const response = await groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             temperature: 0.3,

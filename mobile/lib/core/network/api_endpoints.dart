@@ -4,7 +4,8 @@ class ApiEndpoints {
 
   // ── Base ────────────────────────────────────────────────────────────────────
   // 10.0.2.2 maps to host localhost inside the Android emulator.
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String baseUrl = 'http://10.33.56.111:3000/api';
+
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   static const String register = '/auth/register';
