@@ -1,5 +1,5 @@
 const express = require('express');
-const { uploadDocument, getUserDocuments } = require('../controllers/ingestionController');
+const { uploadDocument, getUserDocuments, generateSummary } = require('../controllers/ingestionController');
 const { protect } = require('../middleware/authMiddleware');
 const { uploadMultiple } = require('../middleware/uploadMiddleware');
 
@@ -12,5 +12,6 @@ const router = express.Router();
 // @access  Private
 router.post('/ingestion', protect, uploadMultiple, uploadDocument);
 router.get('/', protect, getUserDocuments);
+router.post('/summary', protect, generateSummary);
 
 module.exports = router;

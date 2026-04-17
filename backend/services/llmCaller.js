@@ -100,4 +100,64 @@ ${query}
     }
 }
 
-module.exports = { callLLM };
+async function summarizeLLM(text) {
+    const startTime = Date.now();
+
+    try {
+        // Truncate to ~12000 chars to stay within Groq token limits
+        const truncatedText = text.slice(0, 12000);
+
+        const response = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.3,
+            max_tokens: 1200,
+            messages: [
+                {
+                    role: "system",
+                    content: `You are a professional document summarizer. 
+RULES:
+1. Read the document text carefully.
+2. Generate a detailed "summary" section covering all key points, structured clearly.
+3. Generate a "tldr" section — a single concise sentence capturing the essence of the document.
+4. Return your response in this EXACT JSON format and nothing else:
+{"summary": "your detailed summary here", "tldr": "one line tldr here"}
+5. Do NOT wrap in markdown code blocks. Return raw JSON only.
+6. NEVER make up information. Only summarize what is present.`.trim(),
+                },
+                {
+                    role: "user",
+                    content: `Summarize this document:\n\n${truncatedText}`,
+                },
+            ],
+        });
+
+        const raw = response.choices[0]?.message?.content || "";
+
+        // Parse the JSON response
+        try {
+            const parsed = JSON.parse(raw);
+            return {
+                summary: parsed.summary || "",
+                tldr: parsed.tldr || "",
+                responseTimeMs: Date.now() - startTime,
+            };
+        } catch {
+            // If LLM didn't return valid JSON, return raw as summary
+            return {
+                summary: raw.trim(),
+                tldr: "",
+                responseTimeMs: Date.now() - startTime,
+            };
+        }
+    } catch (error) {
+        console.error("Summary LLM Error:", error);
+        return {
+            summary: "Failed to generate summary.",
+            tldr: "",
+            error: true,
+            responseTimeMs: Date.now() - startTime,
+        };
+    }
+}
+
+module.exports = { callLLM, summarizeLLM };

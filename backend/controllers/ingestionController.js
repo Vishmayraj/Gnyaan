@@ -120,3 +120,66 @@ exports.getUserDocuments = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch documents" });
     }
 };
+
+// ── POST Generate Summary + TL;DR ──────────────────────────────────────────────────
+const { summarizeLLM } = require("../services/llmCaller");
+
+exports.generateSummary = async (req, res) => {
+    try {
+        const userId = req.user._id.toString();
+        const { documentId } = req.body;
+
+        if (!documentId) {
+            return res.status(400).json({ error: "documentId is required" });
+        }
+
+        // 1. Find the document belonging to this user
+        const document = await Document.findOne({ _id: documentId, uploadedBy: userId });
+        if (!document) {
+            return res.status(404).json({ error: "Document not found" });
+        }
+
+        // 2. If summary already exists, return cached version
+        if (document.summary && document.tldr) {
+            return res.status(200).json({
+                success: true,
+                cached: true,
+                summary: document.summary,
+                tldr: document.tldr,
+                title: document.title,
+            });
+        }
+
+        // 3. Re-parse the raw text from the stored file
+        const parsedBlocks = await parseDocument(document.filePath, document.fileType);
+        const fullText = parsedBlocks.map((b) => b.text).join("\n\n");
+
+        if (!fullText || fullText.trim().length === 0) {
+            return res.status(400).json({ error: "Document has no extractable text" });
+        }
+
+        // 4. Fire to Groq for summarization
+        const { summary, tldr, responseTimeMs, error } = await summarizeLLM(fullText);
+
+        if (error) {
+            return res.status(500).json({ error: "LLM failed to generate summary" });
+        }
+
+        // 5. Cache into MongoDB so we never re-generate for the same doc
+        document.summary = summary;
+        document.tldr = tldr;
+        await document.save();
+
+        return res.status(200).json({
+            success: true,
+            cached: false,
+            summary,
+            tldr,
+            title: document.title,
+            responseTimeMs,
+        });
+    } catch (err) {
+        console.error("Summary generation error:", err);
+        res.status(500).json({ error: "Failed to generate summary" });
+    }
+};

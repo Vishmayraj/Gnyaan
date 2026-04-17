@@ -74,6 +74,14 @@ const documentSchema = new mongoose.Schema(
 
         lastIndexedAt: {
             type: Date
+        },
+
+        summary: {
+            type: String
+        },
+
+        tldr: {
+            type: String
         }
     },
     { timestamps: true }
