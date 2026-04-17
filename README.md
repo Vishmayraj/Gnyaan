@@ -14,43 +14,44 @@ We circumvent the fallacies of distributed systems through rigorous boundary enf
 
 ```mermaid
 graph TD
+
     %% Mobile Client
-    subgraph Mobile Interface [Flutter Client]
-        UI[Glassmorphic UI]
-        State[Riverpod / Providers]
-        Net[Dio ApiClient]
-        
+    subgraph Mobile_Interface["Flutter Client"]
+        UI["Glassmorphic UI"]
+        State["Riverpod / Providers"]
+        Net["Dio ApiClient"]
+
         UI <--> State
         State <--> Net
     end
-    
+
     %% API Gateway
-    subgraph Gateway [Node.js Express Server]
-        R[(Routes)]
-        M[Upload / Auth Middleware]
-        C{Controllers}
-        
+    subgraph Gateway["Node.js Express Server"]
+        R["Routes"]
+        M["Upload / Auth Middleware"]
+        C{"Controllers"}
+
         R --> M
         M --> C
     end
-    
-    %% Data Persistence Layer
-    subgraph Primary Store [MongoDB]
-        Auth[(Users)]
-        DocMeta[(Documents Meta)]
-        Sum[(Summaries/Insights)]
-    end
-    
-    %% AI Pipeline
-    subgraph Inference & Vector Compute
-        Chunk[Langchain Chunking / Sliding Window]
-        Embed[@xenova/transformers 'Xenova/bge-small-en-v1.5']
-        Q[(Qdrant VectorDB)]
-        LLM[Groq API - llama-3.3-70b]
+
+    %% Database
+    subgraph Primary_Store["MongoDB"]
+        Auth["Users"]
+        DocMeta["Documents Metadata"]
+        Sum["Summaries / Insights"]
     end
 
-    %% Bindings
-    Net <==>|REST / JSON| R
+    %% AI Pipeline
+    subgraph AI_Pipeline["Inference and Vector Compute"]
+        Chunk["LangChain Chunking / Sliding Window"]
+        Embed["Transformers Embedding Model"]
+        Q["Qdrant VectorDB"]
+        LLM["Groq API - llama-3.3-70b"]
+    end
+
+    %% Connections
+    Net <--> |REST / JSON| R
     C --> Auth
     C --> DocMeta
     C --> Sum
@@ -58,7 +59,7 @@ graph TD
     Chunk --> Embed
     Embed --> Q
     C --> LLM
-    Q -.->|Cosine Similarity Search| LLM
+    Q -.-> |Cosine Similarity Search| LLM
 ```
 
 ---
